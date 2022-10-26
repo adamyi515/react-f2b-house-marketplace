@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import {ReactComponent as ArrowRightIcon } from '../assets/svg/keyboardArrowRightIcon.svg';
 import visibilityIcon from '../assets/svg/visibilityIcon.svg';
+
+// Firebase
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase.config';
+
 
 const SignIn = () => {
     // Local state
@@ -11,6 +17,7 @@ const SignIn = () => {
         password: ''
     });
     const { email, password } = formData;
+    const navigate = useNavigate();
 
     // Event Handlers /////////////////////////////////////////////////
     const handleChange = ev => {
@@ -22,6 +29,18 @@ const SignIn = () => {
         })
     }
 
+    const handleSubmit = async ev => {
+        ev.preventDefault();
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            if(userCredential.user){
+                navigate('/');
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error('Bad User Credentials')
+        }
+    }
 
     return(
         <>
@@ -31,7 +50,7 @@ const SignIn = () => {
                         Welcome back!
                     </p>
                 </header>
-                <form>
+                <form onSubmit={handleSubmit}>
                     <input 
                         type='email'
                         id='email'

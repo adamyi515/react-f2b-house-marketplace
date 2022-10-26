@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import {toast} from 'react-toastify';
 import {ReactComponent as ArrowRightIcon } from '../assets/svg/keyboardArrowRightIcon.svg';
 import visibilityIcon from '../assets/svg/visibilityIcon.svg';
+
+// Firebase
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../firebase.config';
 
 const SignUp = () => {
     // Local state
@@ -12,6 +18,7 @@ const SignUp = () => {
         password: ''
     });
     const { name, email, password } = formData;
+    const navigate = useNavigate();
 
     // Event Handlers /////////////////////////////////////////////////
     const handleChange = ev => {
@@ -23,6 +30,33 @@ const SignUp = () => {
         })
     }
 
+    const handleSubmit = async ev => {
+        ev.preventDefault();
+        try {
+            // Create a user in Firebase Authentication system.
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Update the newly created user in Firebase Authentication display name.
+            updateProfile(auth.currentUser, {
+                displayName: name
+            });
+
+            // // Add the user in our Firebase Firestore DB.
+            const formDataCopy = {...formData};
+            delete formDataCopy.password;
+            formDataCopy.timeStamp = serverTimestamp();
+
+            // // Making a query call to Firebase Firestore.
+            await setDoc(doc(db, 'users', user.uid), formDataCopy);
+
+            navigate('/');
+
+        } catch (error) {
+            toast.error('Something went wrong with Registraion.');
+        }
+    }
+
 
     return(
         <>
@@ -32,7 +66,7 @@ const SignUp = () => {
                         Welcome back!
                     </p>
                 </header>
-                <form>
+                <form onSubmit={handleSubmit}>
                     <input 
                         type='text'
                         id='name'
